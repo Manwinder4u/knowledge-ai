@@ -4,17 +4,17 @@ import (
 	"net/http"
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Server struct {
 	config *config.Config
-	db     *pgxpool.Pool
+	db     *database.Database
 	router *chi.Mux
 }
 
-func New(cfg *config.Config, db *pgxpool.Pool) *Server {
+func New(cfg *config.Config, db *database.Database) *Server {
 	s := &Server{
 		config: cfg,
 		db:     db,

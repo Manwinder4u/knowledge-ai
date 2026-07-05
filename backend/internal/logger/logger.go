@@ -1,7 +1,14 @@
 package logger
 
-import "github.com/rs/zerolog"
+import (
+	"os"
+
+	"github.com/rs/zerolog"
+)
 
 func New() zerolog.Logger {
-	return zerolog.Logger{}
+	return zerolog.New(os.Stdout).
+		With().
+		Timestamp().
+		Logger()
 }

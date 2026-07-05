@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func New(cfg *config.Config) (*pgxpool.Pool, error) {
+func New(cfg *config.Config) (*Database, error) {
 	// Instead of: db.Ping(context.Background())
 	// we use: context.WithTimeout(..., 5*time.Second)
 	// Imagine PostgreSQL is hanging.
@@ -19,15 +19,15 @@ func New(cfg *config.Config) (*pgxpool.Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
+	dbPool, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("create postgres pool: %w", err)
 	}
 
-	if err := db.Ping(ctx); err != nil {
-		db.Close()
+	if err := dbPool.Ping(ctx); err != nil {
+		dbPool.Close()
 		return nil, fmt.Errorf("ping postgres: %w", err)
 	}
 
-	return db, nil
+	return &Database{pool: dbPool}, nil
 }

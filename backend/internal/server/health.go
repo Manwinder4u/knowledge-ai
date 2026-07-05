@@ -6,17 +6,27 @@ import (
 )
 
 type HealthResponse struct {
-	Status  string `json:"status"`
-	Service string `json:"service"`
+	Status   string `json:"status"`
+	Service  string `json:"service"`
+	Database string `json:"database"`
 }
 
 func (s *Server) health(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
 	response := HealthResponse{
-		Status:  "ok",
-		Service: s.config.AppName,
+		Status:   "ok",
+		Service:  s.config.AppName,
+		Database: "up",
 	}
 
-	json.NewEncoder(w).Encode(response)
+	if err := s.db.Health(); err != nil {
+		response.Status = "error"
+		response.Database = "down"
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+	}
 }

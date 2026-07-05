@@ -5,6 +5,7 @@ import (
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/logger"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/server"
 )
 
@@ -19,7 +20,14 @@ func main() {
 
 	srv := server.New(cfg, db)
 
-	log.Printf("%s started on port %s\n", cfg.AppName, cfg.Port)
+	logger := logger.New()
 
-	log.Fatal(srv.Start())
+	logger.Info().
+		Str("service", cfg.AppName).
+		Str("port", cfg.Port).
+		Msg("Server starting")
+
+	logger.Fatal().
+		Err(srv.Start()).
+		Msg("Failed to connect to database")
 }
