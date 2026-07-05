@@ -8,16 +8,18 @@ import (
 )
 
 type Config struct {
-	AppName string
-	Port    string
+	AppName     string
+	Port        string
+	DatabaseURL string
 }
 
 func Load() *Config {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		AppName: getEnv("APP_NAME", "KnowledgeAI"),
-		Port:    getEnv("PORT", "8080"),
+		AppName:     getEnv("APP_NAME", "KnowledgeAI"),
+		Port:        getEnv("PORT", "8080"),
+		DatabaseURL: getEnv("DATABASE_URL", ""),
 	}
 
 	log.Println("Configuration loaded")
@@ -26,11 +28,8 @@ func Load() *Config {
 }
 
 func getEnv(key, fallback string) string {
-	value := os.Getenv(key)
-
-	if value == "" {
-		return fallback
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-
-	return value
+	return fallback
 }
