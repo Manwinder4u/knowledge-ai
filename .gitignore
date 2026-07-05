@@ -1,0 +1,9 @@
+# Environment
+backend/.env
+
+# macOS
+.DS_Store
+
+# Go
+backend/bin/
+backend/coverage.out
