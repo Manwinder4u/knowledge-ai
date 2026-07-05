@@ -21,3 +21,7 @@ func (db *Database) Health() error {
 
 	return db.pool.Ping(ctx)
 }
+
+func (db *Database) Pool() *pgxpool.Pool {
+	return db.pool
+}
