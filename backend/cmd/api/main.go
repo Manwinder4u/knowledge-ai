@@ -1,21 +1,25 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"log"
 
-	"github.com/Manwinder4u/knowledge-ai/backend/internals/config"
-	"github.com/go-chi/chi/v5"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/server"
 )
 
 func main() {
-	r := chi.NewRouter()
-
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "KnowledgeAI Backend is running 🚀")
-	})
-
 	cfg := config.Load()
-	fmt.Printf("%s started on port %s\n", cfg.AppName, cfg.Port)
-	http.ListenAndServe(":"+cfg.Port, r)
+
+	db, err := database.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	srv := server.New(cfg, db)
+
+	log.Printf("%s started on port %s\n", cfg.AppName, cfg.Port)
+
+	log.Fatal(srv.Start())
 }
