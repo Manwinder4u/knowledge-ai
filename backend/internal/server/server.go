@@ -6,6 +6,7 @@ import (
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/auth"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/documents"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -25,17 +26,23 @@ func New(cfg *config.Config, db *database.Database) *Server {
 	// Authentication dependencies
 	repo := auth.NewPostgresRepository(db)
 
-	jwtManager := auth.NewJWTManager(
-		cfg.JWTSecret,
-		cfg.JWTExpiryHours,
-	)
+	jwtManager := auth.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiryHours)
 
 	service := auth.NewService(repo, jwtManager)
 
-	handler := auth.NewHandler(service)
+	authHandler := auth.NewHandler(service)
 
-	// Register routes
-	auth.RegisterRoutes(s.router, handler)
+	// Register Auth routes
+	auth.RegisterRoutes(s.router, authHandler)
+
+	// Wire up documents dependencies
+	documentRepo := documents.NewPostgresRepository(db)
+
+	documentService := documents.NewService(documentRepo)
+
+	documentHandler := documents.NewHandler(documentService)
+
+	documents.RegisterRoutes(s.router, authHandler, documentHandler)
 
 	// Existing routes
 	s.registerRoutes()
