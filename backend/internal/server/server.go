@@ -7,6 +7,7 @@ import (
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/documents"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -35,10 +36,15 @@ func New(cfg *config.Config, db *database.Database) *Server {
 	// Register Auth routes
 	auth.RegisterRoutes(s.router, authHandler)
 
+	// Storage
+	localStorage := storage.NewLocalStorage(
+		cfg.UploadPath,
+	)
+
 	// Wire up documents dependencies
 	documentRepo := documents.NewPostgresRepository(db)
 
-	documentService := documents.NewService(documentRepo)
+	documentService := documents.NewService(documentRepo, localStorage)
 
 	documentHandler := documents.NewHandler(documentService)
 

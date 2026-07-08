@@ -1,15 +1,15 @@
 package documents
 
-type CreateDocumentRequest struct {
-	Title            string `json:"title" validate:"required,min=3,max=255"`
-	OriginalFilename string `json:"original_filename" validate:"required"`
-}
-
 type DocumentResponse struct {
 	ID               string `json:"id"`
 	Title            string `json:"title"`
 	OriginalFilename string `json:"original_filename"`
-	Status           string `json:"status"`
+
+	StoragePath string `json:"storage_path"`
+	MimeType    string `json:"mime_type"`
+	FileSize    int64  `json:"file_size"`
+
+	Status string `json:"status"`
 }
 
 func ToResponse(doc *Document) DocumentResponse {

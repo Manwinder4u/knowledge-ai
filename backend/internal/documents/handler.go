@@ -1,7 +1,6 @@
 package documents
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/auth"
@@ -19,7 +18,7 @@ func NewHandler(service *Service) *Handler {
 	}
 }
 
-func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	userID, ok := r.Context().Value(auth.UserIDContextKey).(string)
 	if !ok {
@@ -27,17 +26,23 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req CreateDocumentRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		response.Error(w, http.StatusBadRequest, "invalid request body")
+	if err := r.ParseMultipartForm(20 << 20); err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid multipart form")
 		return
 	}
 
-	document, err := h.service.Create(
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "file is required")
+		return
+	}
+	defer file.Close()
+
+	document, err := h.service.Upload(
 		r.Context(),
 		userID,
-		req,
+		file,
+		header,
 	)
 
 	if err != nil {
@@ -45,11 +50,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(
-		w,
-		http.StatusCreated,
-		ToResponse(document),
-	)
+	response.JSON(w, http.StatusCreated, ToResponse(document))
 }
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
@@ -77,11 +78,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		responses = append(responses, ToResponse(&doc))
 	}
 
-	response.JSON(
-		w,
-		http.StatusOK,
-		responses,
-	)
+	response.JSON(w, http.StatusOK, responses)
 }
 
 func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
@@ -105,11 +102,7 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(
-		w,
-		http.StatusOK,
-		ToResponse(document),
-	)
+	response.JSON(w, http.StatusOK, ToResponse(document))
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -122,11 +115,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	documentID := chi.URLParam(r, "id")
 
-	if err := h.service.Delete(
-		r.Context(),
-		documentID,
-		userID,
-	); err != nil {
+	if err := h.service.Delete(r.Context(), documentID, userID); err != nil {
 
 		response.Error(w, http.StatusInternalServerError, err.Error())
 		return

@@ -15,6 +15,8 @@ type Config struct {
 
 	JWTSecret      string
 	JWTExpiryHours int
+
+	UploadPath string
 }
 
 func Load() *Config {
@@ -27,6 +29,8 @@ func Load() *Config {
 
 		JWTSecret:      getEnv("JWT_SECRET", ""),
 		JWTExpiryHours: getEnvAsInt("JWT_EXPIRY_HOURS", 24),
+
+		UploadPath: getEnv("UPLOAD_PATH", "storage/uploads"),
 	}
 
 	log.Println("Configuration loaded")

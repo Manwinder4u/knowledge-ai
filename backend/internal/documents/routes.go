@@ -11,7 +11,7 @@ func RegisterRoutes(r chi.Router, authHandler *auth.Handler, handler *Handler) {
 
 		r.Use(authHandler.AuthMiddleware)
 
-		r.Post("/", handler.Create)
+		r.Post("/upload", handler.Upload)
 
 		r.Get("/", handler.List)
 

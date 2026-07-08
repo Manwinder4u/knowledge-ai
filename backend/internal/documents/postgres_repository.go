@@ -22,8 +22,17 @@ func (r *PostgresRepository) Create(ctx context.Context, document *Document) err
 	document.ID = uuid.NewString()
 
 	query := `
-		INSERT INTO documents ( id, user_id, title, original_filename, status)
-		VALUES ($1,$2,$3,$4,$5) RETURNING created_at,updated_at;`
+		INSERT INTO documents ( 
+			id,
+			user_id,
+			title,
+			original_filename,
+			storage_path,
+			mime_type,
+			file_size,
+			status
+		)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING created_at,updated_at;`
 
 	return r.db.Pool().QueryRow(
 		ctx,
@@ -32,6 +41,9 @@ func (r *PostgresRepository) Create(ctx context.Context, document *Document) err
 		document.UserID,
 		document.Title,
 		document.OriginalFilename,
+		document.StoragePath,
+		document.MimeType,
+		document.FileSize,
 		document.Status,
 	).Scan(
 		&document.CreatedAt,
@@ -41,7 +53,16 @@ func (r *PostgresRepository) Create(ctx context.Context, document *Document) err
 
 func (r *PostgresRepository) ListByUser(ctx context.Context, userID string) ([]Document, error) {
 
-	query := `SELECT id, user_id, title, original_filename, status, created_at, updated_at
+	query := `SELECT id,
+			user_id,
+			title,
+			original_filename,
+			storage_path,
+			mime_type,
+			file_size,
+			status,
+			created_at,
+			updated_at
 		FROM documents WHERE user_id = $1 ORDER BY created_at DESC;`
 
 	rows, err := r.db.Pool().Query(ctx, query, userID)
@@ -62,6 +83,9 @@ func (r *PostgresRepository) ListByUser(ctx context.Context, userID string) ([]D
 			&doc.UserID,
 			&doc.Title,
 			&doc.OriginalFilename,
+			&doc.StoragePath,
+			&doc.MimeType,
+			&doc.FileSize,
 			&doc.Status,
 			&doc.CreatedAt,
 			&doc.UpdatedAt,
@@ -81,7 +105,17 @@ func (r *PostgresRepository) GetByID(ctx context.Context, id string, userId stri
 
 	doc := &Document{}
 
-	query := `SELECT id, user_id, title, original_filename, status, created_at, updated_at
+	query := `SELECT 
+			id, 
+			user_id,
+			title,
+			original_filename,
+			storage_path,
+			mime_type,
+			file_size,
+			status,
+			created_at,
+			updated_at
 		FROM documents WHERE id = $1 AND user_id = $2; `
 
 	err := r.db.Pool().QueryRow(ctx, query, id, userId).Scan(
@@ -89,6 +123,9 @@ func (r *PostgresRepository) GetByID(ctx context.Context, id string, userId stri
 		&doc.UserID,
 		&doc.Title,
 		&doc.OriginalFilename,
+		&doc.StoragePath,
+		&doc.MimeType,
+		&doc.FileSize,
 		&doc.Status,
 		&doc.CreatedAt,
 		&doc.UpdatedAt,
