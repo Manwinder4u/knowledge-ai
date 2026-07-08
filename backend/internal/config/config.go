@@ -16,11 +16,17 @@ type Config struct {
 	JWTSecret      string
 	JWTExpiryHours int
 
-	UploadPath string
+	UploadPath    string
+	MaxUploadSize int64
 }
 
 func Load() *Config {
 	_ = godotenv.Load()
+
+	maxUploadSize, err := strconv.ParseInt(getEnv("MAX_UPLOAD_SIZE", "20971520"), 10, 64)
+	if err != nil {
+		log.Fatal("invalid MAX_UPLOAD_SIZE")
+	}
 
 	cfg := &Config{
 		AppName:     getEnv("APP_NAME", "KnowledgeAI"),
@@ -30,7 +36,8 @@ func Load() *Config {
 		JWTSecret:      getEnv("JWT_SECRET", ""),
 		JWTExpiryHours: getEnvAsInt("JWT_EXPIRY_HOURS", 24),
 
-		UploadPath: getEnv("UPLOAD_PATH", "storage/uploads"),
+		UploadPath:    getEnv("UPLOAD_PATH", "storage/uploads"),
+		MaxUploadSize: maxUploadSize,
 	}
 
 	log.Println("Configuration loaded")

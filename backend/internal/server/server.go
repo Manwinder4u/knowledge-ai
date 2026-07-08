@@ -7,6 +7,7 @@ import (
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/documents"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/middleware"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/storage"
 	"github.com/go-chi/chi/v5"
 )
@@ -23,6 +24,9 @@ func New(cfg *config.Config, db *database.Database) *Server {
 		db:     db,
 		router: chi.NewRouter(),
 	}
+
+	s.router.Use(middleware.Recovery)
+	s.router.Use(middleware.Logger)
 
 	// Authentication dependencies
 	repo := auth.NewPostgresRepository(db)
@@ -46,7 +50,7 @@ func New(cfg *config.Config, db *database.Database) *Server {
 
 	documentService := documents.NewService(documentRepo, localStorage)
 
-	documentHandler := documents.NewHandler(documentService)
+	documentHandler := documents.NewHandler(documentService, cfg)
 
 	documents.RegisterRoutes(s.router, authHandler, documentHandler)
 

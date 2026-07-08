@@ -6,8 +6,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func New() zerolog.Logger {
-	return zerolog.New(os.Stdout).
+var Log zerolog.Logger
+
+func Init() {
+	Log = zerolog.New(os.Stdout).
 		With().
 		Timestamp().
 		Logger()

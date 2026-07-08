@@ -4,17 +4,20 @@ import (
 	"net/http"
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/auth"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/response"
 	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
 	service *Service
+	config  *config.Config
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, cfg *config.Config) *Handler {
 	return &Handler{
 		service: service,
+		config:  cfg,
 	}
 }
 
@@ -26,7 +29,7 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := r.ParseMultipartForm(20 << 20); err != nil {
+	if err := r.ParseMultipartForm(h.config.MaxUploadSize); err != nil {
 		response.Error(w, http.StatusBadRequest, "invalid multipart form")
 		return
 	}
@@ -38,12 +41,12 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	document, err := h.service.Upload(
-		r.Context(),
-		userID,
-		file,
-		header,
-	)
+	if err := ValidateUpload(header, h.config.MaxUploadSize); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	document, err := h.service.Upload(r.Context(), userID, file, header)
 
 	if err != nil {
 		response.Error(w, http.StatusInternalServerError, err.Error())

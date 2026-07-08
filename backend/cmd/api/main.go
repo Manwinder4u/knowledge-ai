@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+	logger.Init()
 	cfg := config.Load()
 
 	db, err := database.New(cfg)
@@ -20,14 +21,12 @@ func main() {
 
 	srv := server.New(cfg, db)
 
-	logger := logger.New()
-
-	logger.Info().
+	logger.Log.Info().
 		Str("service", cfg.AppName).
 		Str("port", cfg.Port).
 		Msg("Server starting")
 
-	logger.Fatal().
+	logger.Log.Fatal().
 		Err(srv.Start()).
 		Msg("Failed to connect to database")
 }
