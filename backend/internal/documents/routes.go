@@ -20,5 +20,7 @@ func RegisterRoutes(r chi.Router, authHandler *auth.Handler, handler *Handler) {
 		r.Delete("/{id}", handler.Delete)
 
 		r.Get("/{id}/extract", handler.Extract)
+
+		r.Get("/{id}/chunks", handler.Chunks)
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"mime/multipart"
 
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunker"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/extractor"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/storage"
 )
@@ -12,15 +13,22 @@ type Service struct {
 	repo      Repository
 	storage   storage.Storage
 	extractor extractor.Extractor
+	chunker   chunker.Chunker
 }
 
-func NewService(repo Repository, storage storage.Storage, extractor extractor.Extractor) *Service {
+func NewService(
+	repository Repository,
+	storage storage.Storage,
+	extractor extractor.Extractor,
+	chunker chunker.Chunker,
+) *Service {
+
 	return &Service{
-		repo:      repo,
+		repo:      repository,
 		storage:   storage,
 		extractor: extractor,
+		chunker:   chunker,
 	}
-
 }
 
 func (s *Service) Upload(ctx context.Context, userID string, file multipart.File, header *multipart.FileHeader) (*Document, error) {
@@ -92,4 +100,22 @@ func (s *Service) Extract(ctx context.Context, documentID string, userID string)
 	}
 
 	return text, nil
+}
+
+// Chunking of dcouments texts
+func (s *Service) Chunk(ctx context.Context, documentID string, userID string) ([]string, error) {
+
+	document, err := s.repo.Get(ctx, documentID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	text, err := s.extractor.Extract(ctx, document.StoragePath)
+	if err != nil {
+		return nil, err
+	}
+
+	chunks := s.chunker.Chunk(text)
+
+	return chunks, nil
 }

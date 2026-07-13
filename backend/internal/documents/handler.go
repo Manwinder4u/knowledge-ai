@@ -145,3 +145,22 @@ func (h *Handler) Extract(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusOK, ExtractResponse{Text: text})
 }
+
+func (h *Handler) Chunks(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := r.Context().Value(auth.UserIDContextKey).(string)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	documentID := chi.URLParam(r, "id")
+
+	chunks, err := h.service.Chunk(r.Context(), documentID, userID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, ChunkResponse{Chunks: chunks})
+}

@@ -16,6 +16,10 @@ type ExtractResponse struct {
 	Text string `json:"text"`
 }
 
+type ChunkResponse struct {
+	Chunks []string `json:"chunks"`
+}
+
 func ToResponse(doc *Document) DocumentResponse {
 	return DocumentResponse{
 		ID:               doc.ID,
