@@ -12,6 +12,10 @@ type DocumentResponse struct {
 	Status string `json:"status"`
 }
 
+type ExtractResponse struct {
+	Text string `json:"text"`
+}
+
 func ToResponse(doc *Document) DocumentResponse {
 	return DocumentResponse{
 		ID:               doc.ID,

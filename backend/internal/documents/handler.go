@@ -126,3 +126,22 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *Handler) Extract(w http.ResponseWriter, r *http.Request) {
+
+	userID, ok := r.Context().Value(auth.UserIDContextKey).(string)
+	if !ok {
+		response.Error(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	documentID := chi.URLParam(r, "id")
+
+	text, err := h.service.Extract(r.Context(), documentID, userID)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, ExtractResponse{Text: text})
+}

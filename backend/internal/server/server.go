@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/extractor"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/auth"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
@@ -47,8 +48,9 @@ func New(cfg *config.Config, db *database.Database) *Server {
 
 	// Wire up documents dependencies
 	documentRepo := documents.NewPostgresRepository(db)
+	pdfExtractor := extractor.NewPDFExtractor()
 
-	documentService := documents.NewService(documentRepo, localStorage)
+	documentService := documents.NewService(documentRepo, localStorage, pdfExtractor)
 
 	documentHandler := documents.NewHandler(documentService, cfg)
 

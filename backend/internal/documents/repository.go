@@ -10,4 +10,6 @@ type Repository interface {
 	GetByID(ctx context.Context, id string, userId string) (*Document, error)
 
 	Delete(ctx context.Context, id string, userId string) error
+
+	Get(ctx context.Context, id string, userID string) (*Document, error)
 }

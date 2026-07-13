@@ -146,3 +146,42 @@ func (r *PostgresRepository) Delete(ctx context.Context, id string, userID strin
 
 	return err
 }
+
+func (r *PostgresRepository) Get(ctx context.Context, id string, userID string) (*Document, error) {
+
+	query := `
+		SELECT
+			id,
+			user_id,
+			title,
+			original_filename,
+			storage_path,
+			mime_type,
+			file_size,
+			status,
+			created_at
+		FROM documents
+		WHERE id = $1
+		AND user_id = $2
+	`
+
+	document := &Document{}
+
+	err := r.db.Pool().QueryRow(ctx, query, id, userID).Scan(
+		&document.ID,
+		&document.UserID,
+		&document.Title,
+		&document.OriginalFilename,
+		&document.StoragePath,
+		&document.MimeType,
+		&document.FileSize,
+		&document.Status,
+		&document.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return document, nil
+}

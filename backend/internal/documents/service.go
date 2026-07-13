@@ -4,18 +4,21 @@ import (
 	"context"
 	"mime/multipart"
 
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/extractor"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/storage"
 )
 
 type Service struct {
-	repo    Repository
-	storage storage.Storage
+	repo      Repository
+	storage   storage.Storage
+	extractor extractor.Extractor
 }
 
-func NewService(repo Repository, storage storage.Storage) *Service {
+func NewService(repo Repository, storage storage.Storage, extractor extractor.Extractor) *Service {
 	return &Service{
-		repo:    repo,
-		storage: storage,
+		repo:      repo,
+		storage:   storage,
+		extractor: extractor,
 	}
 
 }
@@ -71,4 +74,22 @@ func (s *Service) Delete(ctx context.Context, id string, userID string) error {
 	}
 
 	return s.repo.Delete(ctx, id, userID)
+}
+
+func (s *Service) Extract(ctx context.Context, documentID string, userID string) (string, error) {
+
+	document, err := s.repo.Get(ctx, documentID, userID)
+	if err != nil {
+		return "", err
+	}
+
+	text, err := s.extractor.Extract(
+		ctx,
+		document.StoragePath,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	return text, nil
 }
