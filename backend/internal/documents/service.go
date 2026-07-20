@@ -2,32 +2,29 @@ package documents
 
 import (
 	"context"
+	"fmt"
 	"mime/multipart"
 
-	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunker"
-	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/extractor"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/ingestion"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/storage"
 )
 
 type Service struct {
 	repo      Repository
 	storage   storage.Storage
-	extractor extractor.Extractor
-	chunker   chunker.Chunker
+	ingestion *ingestion.Service
 }
 
 func NewService(
 	repository Repository,
 	storage storage.Storage,
-	extractor extractor.Extractor,
-	chunker chunker.Chunker,
+	ingestion *ingestion.Service,
 ) *Service {
 
 	return &Service{
 		repo:      repository,
 		storage:   storage,
-		extractor: extractor,
-		chunker:   chunker,
+		ingestion: ingestion,
 	}
 }
 
@@ -52,6 +49,18 @@ func (s *Service) Upload(ctx context.Context, userID string, file multipart.File
 		// If DB operation Fails
 		// File remains on Disk forever, Its Automatic Database cleanup
 		_ = s.storage.Delete(ctx, document.StoragePath)
+		return nil, err
+	}
+
+	fmt.Println("Document ID:", document.ID)
+	// Trigger AI ingestion
+	if err := s.ingestion.Process(
+		ctx,
+		&ingestion.Document{
+			ID:          document.ID,
+			StoragePath: document.StoragePath,
+		},
+	); err != nil {
 		return nil, err
 	}
 
@@ -82,40 +91,4 @@ func (s *Service) Delete(ctx context.Context, id string, userID string) error {
 	}
 
 	return s.repo.Delete(ctx, id, userID)
-}
-
-func (s *Service) Extract(ctx context.Context, documentID string, userID string) (string, error) {
-
-	document, err := s.repo.Get(ctx, documentID, userID)
-	if err != nil {
-		return "", err
-	}
-
-	text, err := s.extractor.Extract(
-		ctx,
-		document.StoragePath,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	return text, nil
-}
-
-// Chunking of dcouments texts
-func (s *Service) Chunk(ctx context.Context, documentID string, userID string) ([]string, error) {
-
-	document, err := s.repo.Get(ctx, documentID, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	text, err := s.extractor.Extract(ctx, document.StoragePath)
-	if err != nil {
-		return nil, err
-	}
-
-	chunks := s.chunker.Chunk(text)
-
-	return chunks, nil
 }

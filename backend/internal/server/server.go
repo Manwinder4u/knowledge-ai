@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunker"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunks"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/extractor"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/ingestion"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/auth"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
@@ -47,16 +49,19 @@ func New(cfg *config.Config, db *database.Database) *Server {
 		cfg.UploadPath,
 	)
 
-	// Wire up documents dependencies
-	documentRepo := documents.NewPostgresRepository(db)
+	// AI
 	pdfExtractor := extractor.NewPDFExtractor()
 	wordChunker := chunker.NewWordChunker(200, 30)
 
+	chunkRepository := chunks.NewPostgresRepository(db)
+	ingestionService := ingestion.NewService(pdfExtractor, wordChunker, chunkRepository)
+
+	// Documents
+	documentRepo := documents.NewPostgresRepository(db)
 	documentService := documents.NewService(
 		documentRepo,
 		localStorage,
-		pdfExtractor,
-		wordChunker,
+		ingestionService,
 	)
 
 	documentHandler := documents.NewHandler(documentService, cfg)
