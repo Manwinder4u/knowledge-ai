@@ -1,12 +1,16 @@
 package chunks
 
-import "time"
+import (
+	"time"
+
+	"github.com/pgvector/pgvector-go"
+)
 
 type Chunk struct {
 	ID         string
 	DocumentID string
 	ChunkIndex int
 	Content    string
-	Embedding  []float32
+	Embedding  pgvector.Vector
 	CreatedAt  time.Time
 }

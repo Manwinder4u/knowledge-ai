@@ -5,6 +5,7 @@ import (
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunker"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunks"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/embedding"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/extractor"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/ingestion"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/auth"
@@ -53,8 +54,14 @@ func New(cfg *config.Config, db *database.Database) *Server {
 	pdfExtractor := extractor.NewPDFExtractor()
 	wordChunker := chunker.NewWordChunker(200, 30)
 
+	// Embedding
+	embedder := embedding.NewOllamaEmbedder(
+		cfg.OllamaURL,
+		cfg.EmbeddingModel,
+	)
+
 	chunkRepository := chunks.NewPostgresRepository(db)
-	ingestionService := ingestion.NewService(pdfExtractor, wordChunker, chunkRepository)
+	ingestionService := ingestion.NewService(pdfExtractor, wordChunker, chunkRepository, embedder)
 
 	// Documents
 	documentRepo := documents.NewPostgresRepository(db)

@@ -36,18 +36,21 @@ func (r *PostgresRepository) CreateMany(
 			(
 				document_id,
 				chunk_index,
-				content
+				content,
+				embedding
 			)
 			VALUES
 			(
 				$1,
 				$2,
-				$3
+				$3,
+				$4
 			)
 			`,
 			chunk.DocumentID,
 			chunk.ChunkIndex,
 			chunk.Content,
+			chunk.Embedding,
 		)
 	}
 
@@ -81,6 +84,7 @@ func (r *PostgresRepository) ListByDocument(
 			document_id,
 			chunk_index,
 			content,
+			embedding,
 			created_at
 		FROM document_chunks
 		WHERE document_id = $1
@@ -108,6 +112,7 @@ func (r *PostgresRepository) ListByDocument(
 			&chunk.DocumentID,
 			&chunk.ChunkIndex,
 			&chunk.Content,
+			&chunk.Embedding,
 			&chunk.CreatedAt,
 		)
 		if err != nil {
