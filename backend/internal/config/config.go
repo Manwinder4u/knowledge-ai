@@ -19,8 +19,9 @@ type Config struct {
 	UploadPath    string
 	MaxUploadSize int64
 
-	OllamaURL      string
-	EmbeddingModel string
+	OllamaURL       string
+	EmbeddingModel  string
+	OllamaChatModel string
 }
 
 func Load() *Config {
@@ -42,8 +43,9 @@ func Load() *Config {
 		UploadPath:    getEnv("UPLOAD_PATH", "storage/uploads"),
 		MaxUploadSize: maxUploadSize,
 
-		OllamaURL:      getEnv("OLLAMA_URL", "http://localhost:11434"),
-		EmbeddingModel: getEnv("EMBEDDING_MODEL", "nomic-embed-text"),
+		OllamaURL:       getEnv("OLLAMA_URL", "http://localhost:11434"),
+		EmbeddingModel:  getEnv("EMBEDDING_MODEL", "nomic-embed-text"),
+		OllamaChatModel: getEnv("OLLAMA_CHAT_MODEL", "qwen3:8b"),
 	}
 
 	log.Println("Configuration loaded")

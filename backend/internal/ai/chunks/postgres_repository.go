@@ -5,6 +5,7 @@ import (
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
 	"github.com/jackc/pgx/v5"
+	"github.com/pgvector/pgvector-go"
 )
 
 type PostgresRepository struct {
@@ -96,6 +97,55 @@ func (r *PostgresRepository) ListByDocument(
 		query,
 		documentID,
 	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var chunks []Chunk
+
+	for rows.Next() {
+
+		var chunk Chunk
+
+		err := rows.Scan(
+			&chunk.ID,
+			&chunk.DocumentID,
+			&chunk.ChunkIndex,
+			&chunk.Content,
+			&chunk.Embedding,
+			&chunk.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		chunks = append(chunks, chunk)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return chunks, nil
+}
+
+func (r *PostgresRepository) SearchSimilar(ctx context.Context, embedding pgvector.Vector, limit int) ([]Chunk, error) {
+
+	query := `
+		SELECT
+			id,
+			document_id,
+			chunk_index,
+			content,
+			embedding,
+			created_at
+		FROM document_chunks
+		ORDER BY embedding <=> $1
+		LIMIT $2
+	`
+
+	rows, err := r.db.Pool().Query(ctx, query, embedding, limit)
 	if err != nil {
 		return nil, err
 	}

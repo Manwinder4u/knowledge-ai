@@ -3,11 +3,14 @@ package server
 import (
 	"net/http"
 
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chat"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunker"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/chunks"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/embedding"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/extractor"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/ingestion"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/llm"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/retrieval"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/auth"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/config"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/database"
@@ -42,9 +45,6 @@ func New(cfg *config.Config, db *database.Database) *Server {
 
 	authHandler := auth.NewHandler(service)
 
-	// Register Auth routes
-	auth.RegisterRoutes(s.router, authHandler)
-
 	// Storage
 	localStorage := storage.NewLocalStorage(
 		cfg.UploadPath,
@@ -63,6 +63,13 @@ func New(cfg *config.Config, db *database.Database) *Server {
 	chunkRepository := chunks.NewPostgresRepository(db)
 	ingestionService := ingestion.NewService(pdfExtractor, wordChunker, chunkRepository, embedder)
 
+	// Retrival
+	retrievalService := retrieval.NewService(embedder, chunkRepository)
+	llmClient := llm.NewOllamaClient(cfg.OllamaURL, cfg.OllamaChatModel)
+	// Chat service
+	chatService := chat.NewService(retrievalService, llmClient)
+	chatHandler := chat.NewHandler(chatService)
+
 	// Documents
 	documentRepo := documents.NewPostgresRepository(db)
 	documentService := documents.NewService(
@@ -73,7 +80,12 @@ func New(cfg *config.Config, db *database.Database) *Server {
 
 	documentHandler := documents.NewHandler(documentService, cfg)
 
+	// Register Auth routes
+	auth.RegisterRoutes(s.router, authHandler)
+	// Register Documents ROutes
 	documents.RegisterRoutes(s.router, authHandler, documentHandler)
+	// Register Chat routes
+	chat.RegisterRoutes(s.router, authHandler, chatHandler)
 
 	// Existing routes
 	s.registerRoutes()
