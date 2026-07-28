@@ -21,32 +21,50 @@ func NewOllamaClient(baseURL string, model string) *OllamaClient {
 	}
 }
 
-type generateOptions struct {
+type chatOptions struct {
 	Temperature float32 `json:"temperature"`
 	NumPredict  int     `json:"num_predict"`
 }
+type chatRequest struct {
+	Model    string        `json:"model"`
+	Messages []chatMessage `json:"messages"`
+	Stream   bool          `json:"stream"`
+	Options  chatOptions   `json:"options"`
+}
+type chatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+type chatResponse struct {
+	Message struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	} `json:"message"`
 
-type generateRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-	Stream bool   `json:"stream"`
-	//Options generateOptions `json:"options"`
+	Done bool `json:"done"`
 }
 
-type generateResponse struct {
-	Response string `json:"response"`
-}
+func (c *OllamaClient) Generate(ctx context.Context, messages []Message) (string, error) {
+	ollamaMessages := make([]chatMessage, 0, len(messages))
 
-func (c *OllamaClient) Generate(ctx context.Context, prompt string) (string, error) {
+	for _, message := range messages {
+		ollamaMessages = append(
+			ollamaMessages,
+			chatMessage{
+				Role:    string(message.Role),
+				Content: message.Content,
+			},
+		)
+	}
 
-	request := generateRequest{
-		Model:  c.model,
-		Prompt: prompt,
-		Stream: false,
-		// Options: generateOptions{
-		// 	Temperature: 0.1,
-		// 	NumPredict:  128,
-		// },
+	request := chatRequest{
+		Model:    c.model,
+		Messages: ollamaMessages,
+		Stream:   false,
+		Options: chatOptions{
+			Temperature: 0.1,
+			NumPredict:  512,
+		},
 	}
 
 	body, err := json.Marshal(request)
@@ -54,10 +72,11 @@ func (c *OllamaClient) Generate(ctx context.Context, prompt string) (string, err
 		return "", err
 	}
 
+	fmt.Printf("%+v\n", ollamaMessages)
 	req, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		c.baseURL+"/api/generate",
+		c.baseURL+"/api/chat",
 		bytes.NewReader(body),
 	)
 	if err != nil {
@@ -72,22 +91,29 @@ func (c *OllamaClient) Generate(ctx context.Context, prompt string) (string, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-
-		data, _ := io.ReadAll(resp.Body)
-
-		return "", fmt.Errorf(
-			"ollama returned %d: %s",
-			resp.StatusCode,
-			string(data),
-		)
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
 	}
+	fmt.Println("========== OLLAMA RESPONSE ==========")
+	fmt.Println(string(data))
+	fmt.Println("=====================================")
+	// if resp.StatusCode != http.StatusOK {
 
-	var response generateResponse
+	// 	// return "", fmt.Errorf(
+	// 	// 	"ollama returned %d: %s",
+	// 	// 	resp.StatusCode,
+	// 	// 	string(data),
+	// 	// )
+	// }
 
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	var response chatResponse
+
+	if err := json.Unmarshal(data, &response); err != nil {
 		return "", err
 	}
 
-	return response.Response, nil
+	fmt.Printf("%+v\n", response)
+
+	return response.Message.Content, nil
 }

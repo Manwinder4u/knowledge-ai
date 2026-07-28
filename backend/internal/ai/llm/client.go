@@ -3,5 +3,5 @@ package llm
 import "context"
 
 type Client interface {
-	Generate(ctx context.Context, prompt string) (string, error)
+	Generate(ctx context.Context, messages []Message) (string, error)
 }

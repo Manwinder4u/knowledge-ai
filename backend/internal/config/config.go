@@ -45,7 +45,7 @@ func Load() *Config {
 
 		OllamaURL:       getEnv("OLLAMA_URL", "http://localhost:11434"),
 		EmbeddingModel:  getEnv("EMBEDDING_MODEL", "nomic-embed-text"),
-		OllamaChatModel: getEnv("OLLAMA_CHAT_MODEL", "qwen3:8b"),
+		OllamaChatModel: getEnv("OLLAMA_CHAT_MODEL", "qwen2.5:7b"),
 	}
 
 	log.Println("Configuration loaded")

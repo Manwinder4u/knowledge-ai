@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/llm"
-	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/prompt"
+	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/ragprompt"
 	"github.com/Manwinder4u/knowledge-ai/backend/internal/ai/retrieval"
 )
 
@@ -36,11 +36,18 @@ func (s *Service) Ask(ctx context.Context, question string) (string, error) {
 		contexts = append(contexts, result.Content)
 	}
 
-	finalPrompt := prompt.Build(question, contexts)
-
-	fmt.Printf("Prompt length: %d chars\n", len(finalPrompt))
+	messages := []llm.Message{
+		{
+			Role:    llm.SystemRole,
+			Content: ragprompt.System(contexts),
+		},
+		{
+			Role:    llm.UserRole,
+			Content: question,
+		},
+	}
 	start := time.Now()
-	answer, err := s.llm.Generate(ctx, finalPrompt)
+	answer, err := s.llm.Generate(ctx, messages)
 	fmt.Println("LLM:", time.Since(start))
 	if err != nil {
 		return "", err
